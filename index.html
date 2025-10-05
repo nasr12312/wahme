@@ -1,597 +1,645 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-    <?php
-// ابدأ الجلسة لتخزين حالة تسجيل الدخول
-session_start();
-
-// ###################################
-// ##  غيّر هذا الكود إلى الكود السري الخاص بك  ##
-// ###################################
-$SECRET_CODE = "MySecret123";
-
-// متغير لتحديد ما إذا كان يجب إظهار المحتوى المحمي
-$is_loggedin = false;
-
-// تحقق مما إذا كان المستخدم قد سجل دخوله بالفعل في هذه الجلسة
-if (isset($_SESSION['loggedin']) && $_SESSION['loggedin'] === true) {
-    $is_loggedin = true;
-}
-
-// تحقق مما إذا كان المستخدم يحاول تسجيل الدخول الآن (عبر إرسال النموذج)
-if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    if (isset($_POST['passcode']) && $_POST['passcode'] === $SECRET_CODE) {
-        // الكود صحيح، قم بتسجيل دخوله في الجلسة
-        $_SESSION['loggedin'] = true;
-        $is_loggedin = true;
-    } else {
-        // الكود خاطئ، قم بتجهيز رسالة الخطأ
-        $error_message = "الكود غير صحيح، حاول مرة أخرى.";
-    }
-}
-?>
-<!DOCTYPE html>
-<html lang="ar" dir="rtl">
-<head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>صفحة محمية</title>
-    <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; margin: 0; }
-        .login-container { display: flex; justify-content: center; align-items: center; height: 100vh; background-color: #f0f2f5; }
-        .login-box { background: white; padding: 40px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); text-align: center; width: 90%; max-width: 350px; }
-        .login-box h2 { margin-top: 0; }
-        .login-box input[type="password"] { width: 100%; padding: 12px; margin: 15px 0; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; }
-        .login-box button { width: 100%; padding: 12px; border: none; background-color: #007bff; color: white; border-radius: 8px; cursor: pointer; font-size: 1em; }
-        .error { color: #dc3545; margin-top: 10px; }
-    </style>
-    </head>
-<body>
-
-<?php if ($is_loggedin): ?>
-
-    <h1>أهلاً بك في صفحتي الرائعة!</h1>
-    <p>هذا هو المحتوى الأصلي الذي تمت حمايته الآن.</p>
-    <div>
-        </div>
-
-    <?php else: ?>
-
-    <div class="login-container">
-        <div class="login-box">
-            <form method="post" action="index.php">
-                <h2>🔒 محتوى محمي</h2>
-                <p>الرجاء إدخال كود الدخول للمتابعة.</p>
-                <input type="password" name="passcode" placeholder="أدخل الكود هنا" required>
-                <button type="submit">دخــــول</button>
-                <?php
-                if (isset($error_message)) {
-                    echo '<p class="error">' . $error_message . '</p>';
-                }
-                ?>
-            </form>
-        </div>
-    </div>
-
-<?php endif; ?>
-
-</body>
-</html>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>أداة فحص Gemini API</title>
+    <title>لعبة ترابيع للمجموعات</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700&display=swap');
-        body { font-family: 'Cairo', sans-serif; }
-        .code-block {
-            background: #1e293b;
-            color: #e2e8f0;
-            border-radius: 8px;
-            padding: 16px;
-            font-family: 'Courier New', monospace;
-            white-space: pre-wrap;
-            word-break: break-all;
+        body {
+            font-family: 'Cairo', sans-serif;
+            touch-action: manipulation;
+            background-color: #1a202c;
+            background-image: url('https://www.transparenttextures.com/patterns/dark-denim-3.png');
         }
-        .loading {
-            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        .cell {
+            transition: all 0.2s ease-in-out;
+            box-shadow: inset 0 0 5px rgba(0,0,0,0.5), 0 2px 4px rgba(0,0,0,0.4);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            min-width: 40px;
+        }
+        .cell .coordinate {
+            text-shadow: 1px 1px 3px rgba(0,0,0,0.7);
+            opacity: 0.5;
+            font-size: clamp(0.7rem, 2vw, 1rem);
+        }
+        .cell:hover {
+            transform: scale(1.1);
+            z-index: 10;
+            border-color: #67e8f9;
+        }
+        .cell-p1 { background-color: #3b82f6; }
+        .cell-p2 { background-color: #ef4444; }
+        .cell-p3 { background-color: #22c55e; }
+        .cell-p4 { background-color: #eab308; }
+        
+        .board-shake {
+            animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
+        }
+
+        @keyframes shake {
+          10%, 90% { transform: translate3d(-1px, 0, 0); }
+          20%, 80% { transform: translate3d(2px, 0, 0); }
+          30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
+          40%, 60% { transform: translate3d(4px, 0, 0); }
+        }
+
+        .explosion-effect {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 10px;
+            height: 10px;
+            background: radial-gradient(circle, rgba(255,240,150,1) 0%, rgba(255,100,50,1) 100%);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            animation: blast 0.6s ease-out forwards;
+            pointer-events: none;
+        }
+
+        @keyframes blast {
+            0% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+            100% { transform: translate(-50%, -50%) scale(12); opacity: 0; }
+        }
+       
+        .modal-backdrop { background-color: rgba(0, 0, 0, 0.8); }
+        .player-card.active {
+            transform: scale(1.05);
+            border-color: #67e8f9;
+            box-shadow: 0 0 20px #67e8f9;
+        }
+        .timer-bar {
+            transition: width 1s linear;
+        }
+        #pause-overlay {
+            background-color: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(5px);
+        }
+        .control-button:disabled {
+            background-color: #4a5568;
+            cursor: not-allowed;
+            transform: scale(1);
+            opacity: 0.6;
+        }
+        .label-cell {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: #cbd5e1;
+            background-color: #334155;
+            cursor: default;
+        }
+         .label-cell:hover {
+            transform: none;
+            border-color: rgba(255, 255, 255, 0.1);
         }
     </style>
 </head>
-<body class="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen">
-    <div class="container mx-auto px-4 py-8 max-w-6xl">
-        <!-- Header -->
-        <div class="text-center mb-8">
-            <h1 class="text-4xl font-bold text-gray-800 mb-2">🤖 أداة فحص Gemini API</h1>
-            <p class="text-gray-600">اختبر وفحص استجابات API الخاص بـ Google Gemini</p>
-        </div>
+<body class="bg-gray-900 text-white flex items-center justify-center min-h-screen p-4">
 
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <!-- Request Panel -->
-            <div class="bg-white rounded-xl shadow-lg p-6">
-                <h2 class="text-2xl font-semibold text-gray-800 mb-6 flex items-center">
-                    📤 إعداد الطلب
-                </h2>
+    <!-- Main Game Layout -->
+    <div id="game-container" class="hidden md:flex w-full max-w-7xl mx-auto gap-8 items-start">
+        
+        <!-- Sidebar -->
+        <div class="w-1/3 lg:w-1/4 bg-gray-800 bg-opacity-60 backdrop-blur-sm p-6 rounded-2xl shadow-lg border border-gray-700">
+            <h1 class="text-4xl font-black mb-1 text-cyan-400 text-center">ترابيع</h1>
+            <p class="text-center text-gray-400 mb-6">المنافسة الرباعية</p>
 
-                <!-- API Key -->
-                <div class="mb-6">
-                    <label class="block text-sm font-medium text-gray-700 mb-2">مفتاح API</label>
-                    <input type="password" id="apiKey" 
-                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                           placeholder="أدخل مفتاح API الخاص بك">
-                    <p class="text-xs text-gray-500 mt-1">🔑 أدخل مفتاح API الحقيقي من Google AI Studio</p>
+            <div id="turn-info" class="text-center mb-6 p-3 rounded-lg bg-gray-900">
+                <p class="text-lg">الدور على:</p>
+                <p id="current-player-name" class="text-2xl font-bold"></p>
+                <div id="timer-container" class="w-full bg-gray-700 rounded-full h-2.5 mt-2">
+                    <div id="timer-bar" class="bg-cyan-400 h-2.5 rounded-full timer-bar" style="width: 100%"></div>
                 </div>
+            </div>
 
-                <!-- Model Selection -->
-                <div class="mb-6">
-                    <label class="block text-sm font-medium text-gray-700 mb-2">النموذج</label>
-                    <select id="modelSelect" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
-                        <option value="gemini-pro">gemini-pro</option>
-                        <option value="gemini-pro-vision">gemini-pro-vision</option>
-                        <option value="gemini-1.5-pro">gemini-1.5-pro</option>
-                        <option value="gemini-1.5-flash">gemini-1.5-flash</option>
-                    </select>
-                </div>
-
-                <!-- Request Type -->
-                <div class="mb-6">
-                    <label class="block text-sm font-medium text-gray-700 mb-2">نوع الطلب</label>
-                    <div class="flex gap-4">
-                        <label class="flex items-center">
-                            <input type="radio" name="requestType" value="generateContent" checked class="ml-2">
-                            <span>توليد المحتوى</span>
-                        </label>
-                        <label class="flex items-center">
-                            <input type="radio" name="requestType" value="streamGenerateContent" class="ml-2">
-                            <span>التدفق المباشر</span>
-                        </label>
-                    </div>
-                </div>
-
-                <!-- Message Input -->
-                <div class="mb-6">
-                    <label class="block text-sm font-medium text-gray-700 mb-2">الرسالة</label>
-                    <textarea id="messageInput" rows="4" 
-                              class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                              placeholder="اكتب رسالتك هنا...">مرحبا، كيف يمكنك مساعدتي؟</textarea>
-                </div>
-
-                <!-- Parameters -->
-                <div class="mb-6">
-                    <h3 class="text-lg font-medium text-gray-700 mb-3">المعاملات</h3>
-                    <div class="grid grid-cols-2 gap-4">
-                        <div>
-                            <label class="block text-sm text-gray-600 mb-1">Temperature</label>
-                            <input type="number" id="temperature" value="0.7" min="0" max="1" step="0.1"
-                                   class="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500">
-                        </div>
-                        <div>
-                            <label class="block text-sm text-gray-600 mb-1">Max Tokens</label>
-                            <input type="number" id="maxTokens" value="1000" min="1" max="8192"
-                                   class="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500">
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Send Button -->
-                <button id="sendRequest" 
-                        class="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-3 px-6 rounded-lg font-semibold hover:from-blue-700 hover:to-indigo-700 transition-all duration-200 transform hover:scale-105">
-                    🚀 إرسال الطلب
+            <div id="players-scores" class="space-y-3">
+                <!-- Player cards will be generated here -->
+            </div>
+            
+            <div class="grid grid-cols-2 gap-2 mt-8">
+                <button id="undo-button" class="control-button w-full px-6 py-3 bg-blue-600 hover:bg-blue-700 rounded-lg text-lg font-bold transition-transform transform hover:scale-105">
+                    تراجع
+                </button>
+                 <button id="pause-button" class="control-button w-full px-6 py-3 bg-yellow-600 hover:bg-yellow-700 rounded-lg text-lg font-bold transition-transform transform hover:scale-105">
+                    إيقاف مؤقت
+                </button>
+                 <button id="reset-button" class="control-button col-span-2 w-full px-6 py-3 bg-red-600 hover:bg-red-700 rounded-lg text-lg font-bold transition-transform transform hover:scale-105">
+                    إعادة اللعب
                 </button>
             </div>
 
-            <!-- Response Panel -->
-            <div class="bg-white rounded-xl shadow-lg p-6">
-                <h2 class="text-2xl font-semibold text-gray-800 mb-6 flex items-center">
-                    📥 الاستجابة
-                </h2>
-
-                <!-- Status -->
-                <div id="statusSection" class="mb-4 hidden">
-                    <!-- Success/Failure Indicator -->
-                    <div id="resultIndicator" class="mb-4 p-4 rounded-lg border-2 text-center">
-                        <div id="resultIcon" class="text-4xl mb-2"></div>
-                        <div id="resultText" class="font-bold text-lg"></div>
-                        <div id="resultSubtext" class="text-sm mt-1"></div>
-                    </div>
-                    
-                    <div class="flex items-center gap-2 mb-2">
-                        <span class="text-sm font-medium text-gray-600">الحالة:</span>
-                        <span id="statusCode" class="px-2 py-1 rounded text-xs font-medium"></span>
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <span class="text-sm font-medium text-gray-600">وقت الاستجابة:</span>
-                        <span id="responseTime" class="text-sm text-gray-800"></span>
-                    </div>
-                </div>
-
-                <!-- Response Content -->
-                <div id="responseContent" class="min-h-[300px] border-2 border-dashed border-gray-200 rounded-lg p-4 flex items-center justify-center text-gray-500">
-                    <div class="text-center">
-                        <div class="text-4xl mb-2">🤖</div>
-                        <p>الاستجابة ستظهر هنا بعد إرسال الطلب</p>
-                    </div>
-                </div>
-
-                <!-- Loading State -->
-                <div id="loadingState" class="hidden min-h-[300px] flex items-center justify-center">
-                    <div class="text-center">
-                        <div class="loading text-4xl mb-4">⚡</div>
-                        <p class="text-gray-600">جاري معالجة الطلب...</p>
-                    </div>
-                </div>
-
-                <!-- Copy Button -->
-                <button id="copyResponse" 
-                        class="mt-4 w-full bg-gray-100 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-200 transition-colors duration-200 hidden">
-                    📋 نسخ الاستجابة
-                </button>
-            </div>
         </div>
 
-        <!-- Request History -->
-        <div class="mt-8 bg-white rounded-xl shadow-lg p-6">
-            <h2 class="text-2xl font-semibold text-gray-800 mb-6 flex items-center">
-                📊 سجل الطلبات
-            </h2>
-            <div id="requestHistory" class="space-y-4">
-                <p class="text-gray-500 text-center py-8">لا توجد طلبات سابقة</p>
+        <!-- Game Board with Coordinates -->
+        <div class="relative flex-1 flex items-center justify-center">
+             <div id="board-wrapper" class="inline-grid gap-1.5 p-3 rounded-lg bg-gray-800 bg-opacity-50 shadow-2xl">
+                <!-- Board and labels will be generated by JavaScript -->
             </div>
-        </div>
-
-        <!-- API Documentation -->
-        <div class="mt-8 bg-white rounded-xl shadow-lg p-6">
-            <h2 class="text-2xl font-semibold text-gray-800 mb-6 flex items-center">
-                📚 معلومات API
-            </h2>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div>
-                    <h3 class="font-semibold text-gray-700 mb-2">نقاط النهاية المتاحة:</h3>
-                    <ul class="text-sm text-gray-600 space-y-1">
-                        <li>• <code>/v1/models/{model}:generateContent</code></li>
-                        <li>• <code>/v1/models/{model}:streamGenerateContent</code></li>
-                        <li>• <code>/v1/models</code> (قائمة النماذج)</li>
-                    </ul>
-                </div>
-                <div>
-                    <h3 class="font-semibold text-gray-700 mb-2">رموز الاستجابة:</h3>
-                    <ul class="text-sm text-gray-600 space-y-1">
-                        <li>• <span class="text-green-600">200</span> - نجح الطلب</li>
-                        <li>• <span class="text-yellow-600">400</span> - خطأ في الطلب</li>
-                        <li>• <span class="text-red-600">401</span> - غير مصرح</li>
-                        <li>• <span class="text-red-600">429</span> - تجاوز الحد المسموح</li>
-                    </ul>
-                </div>
-                <div>
-                    <h3 class="font-semibold text-gray-700 mb-2">الحصول على مفتاح API:</h3>
-                    <ul class="text-sm text-gray-600 space-y-1">
-                        <li>• انتقل إلى <a href="https://makersuite.google.com/app/apikey" target="_blank" class="text-blue-600 hover:underline">Google AI Studio</a></li>
-                        <li>• أنشئ مفتاح API جديد</li>
-                        <li>• انسخ المفتاح والصقه في الحقل أعلاه</li>
-                        <li>• ابدأ في اختبار API الحقيقي!</li>
-                    </ul>
-                </div>
+            <div id="pause-overlay" class="hidden absolute inset-0 rounded-lg flex items-center justify-center">
+                 <h2 class="text-5xl font-black text-white drop-shadow-lg">اللعبة متوقفة</h2>
             </div>
         </div>
     </div>
+    
+    <!-- Mobile/Small Screen Message -->
+    <div id="mobile-message" class="md:hidden text-center">
+        <h1 class="text-3xl font-bold mb-4">لعبة ترابيع</h1>
+        <p class="text-lg">هذه اللعبة تتطلب شاشة أكبر. يرجى استخدام جهاز لوحي أو كمبيوتر مكتبي لأفضل تجربة.</p>
+    </div>
 
-    <script>
-        class GeminiAPITester {
-            constructor() {
-                this.history = [];
-                this.initializeEventListeners();
+
+    <!-- Setup Modal -->
+    <div id="setup-modal" class="modal-backdrop fixed inset-0 overflow-y-auto p-8 flex justify-center items-start">
+        <div class="bg-gray-800 p-8 rounded-lg shadow-2xl w-11/12 max-w-lg">
+            <h2 class="text-3xl font-bold mb-4 text-center text-yellow-400">إعدادات اللعبة</h2>
+            
+            <div class="mb-6">
+                <h3 class="text-xl font-bold mb-2 text-center text-cyan-400">عدد الفرق</h3>
+                <div class="flex justify-center gap-4">
+                    <select id="player-count" class="w-full p-3 bg-gray-700 rounded border border-gray-600">
+                        <option value="2">فريقان</option>
+                        <option value="3">3 فرق</option>
+                        <option value="4" selected>4 فرق</option>
+                    </select>
+                </div>
+            </div>
+
+            <div id="player-names-container" class="space-y-4">
+                <input type="text" id="p1-name" class="w-full p-3 bg-gray-700 rounded border border-blue-500" placeholder="اسم المجموعة الأولى" value="الفريق الأزرق">
+                <input type="text" id="p2-name" class="w-full p-3 bg-gray-700 rounded border border-red-500" placeholder="اسم المجموعة الثانية" value="الفريق الأحمر">
+                <input type="text" id="p3-name" class="w-full p-3 bg-gray-700 rounded border border-green-500" placeholder="اسم المجموعة الثالثة" value="الفريق الأخضر">
+                <input type="text" id="p4-name" class="w-full p-3 bg-gray-700 rounded border border-yellow-500" placeholder="اسم المجموعة الرابعة" value="الفريق الرابع">
+            </div>
+
+             <h3 class="text-xl font-bold mt-6 mb-2 text-center text-cyan-400">نمط اللعب</h3>
+            <div class="flex justify-center gap-4">
+                <div>
+                    <input type="radio" id="mode-competitive" name="game-mode" value="competitive" checked class="hidden peer">
+                    <label for="mode-competitive" class="block cursor-pointer p-3 text-center rounded-lg border-2 border-gray-600 peer-checked:border-cyan-500 peer-checked:bg-cyan-900/50">
+                        وضع المنافسة<br><span class="text-xs text-gray-400">(مؤقت وأدوار تلقائية)</span>
+                    </label>
+                </div>
+                <div>
+                    <input type="radio" id="mode-free" name="game-mode" value="free" class="hidden peer">
+                    <label for="mode-free" class="block cursor-pointer p-3 text-center rounded-lg border-2 border-gray-600 peer-checked:border-yellow-500 peer-checked:bg-yellow-900/50">
+                        الوضع الحر<br><span class="text-xs text-gray-400">(بدون مؤقت واختيار يدوي)</span>
+                    </label>
+                </div>
+            </div>
+            <div class="mt-6 text-center">
+                 <h3 class="text-xl font-bold mb-2 text-center text-red-400">إضافات</h3>
+                 <label for="enable-mines" class="flex items-center justify-center gap-2 text-lg text-gray-300 cursor-pointer mb-2">
+                    <input type="checkbox" id="enable-mines" class="w-5 h-5 bg-gray-700 border-gray-600 rounded text-red-500 focus:ring-red-600">
+                    تفعيل الألغام (5 ألغام)
+                </label>
+            </div>
+            <button id="start-game-button" class="mt-8 w-full px-8 py-4 bg-green-600 hover:bg-green-700 rounded-lg text-xl font-bold transition-transform transform hover:scale-105">
+                ابدأ اللعب!
+            </button>
+        </div>
+    </div>
+    
+    <!-- Game Over Modal -->
+    <div id="game-over-modal" class="modal-backdrop fixed inset-0 flex items-center justify-center hidden">
+        <div class="bg-gray-800 border-4 border-cyan-500 p-8 rounded-lg shadow-2xl w-11/12 max-w-md text-center">
+            <h2 class="text-4xl font-bold mb-4" id="game-over-title">انتهت اللعبة!</h2>
+            <div id="game-over-ranking" class="text-xl mb-6 space-y-2"></div>
+            <button id="play-again-button" class="px-8 py-3 bg-cyan-600 hover:bg-cyan-700 rounded-lg text-xl font-bold transition-transform transform hover:scale-105">
+                العب مجدداً
+            </button>
+        </div>
+    </div>
+
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    // --- Config ---
+    const GRID_SIZE = 10;
+    const BOARD_SIZE = GRID_SIZE - 1;
+    const MINE_COUNT = 5;
+    const MINE_PENALTY = 5;
+    const TURN_DURATION = 30;
+
+    // --- State ---
+    let boardState;
+    let players;
+    let currentPlayerIndex;
+    let gameActive;
+    let isPaused = false;
+    let turnTimer;
+    let timeLeftInTurn;
+    let gameMode;
+    let minesEnabled;
+    let moveHistory = [];
+
+    // --- DOM Elements ---
+    const gameContainer = document.getElementById('game-container');
+    const boardWrapper = document.getElementById('board-wrapper');
+    const playersScoresContainer = document.getElementById('players-scores');
+    const currentPlayerNameEl = document.getElementById('current-player-name');
+    const timerContainer = document.getElementById('timer-container');
+    const resetButton = document.getElementById('reset-button');
+    const pauseButton = document.getElementById('pause-button');
+    const undoButton = document.getElementById('undo-button');
+    const pauseOverlay = document.getElementById('pause-overlay');
+    // Modals
+    const setupModal = document.getElementById('setup-modal');
+    const playerCountSelect = document.getElementById('player-count');
+    const playerNamesContainer = document.getElementById('player-names-container');
+    const startGameButton = document.getElementById('start-game-button');
+    const enableMinesCheckbox = document.getElementById('enable-mines');
+    const gameOverModal = document.getElementById('game-over-modal');
+    const gameOverTitle = document.getElementById('game-over-title');
+    const gameOverRanking = document.getElementById('game-over-ranking');
+    const playAgainButton = document.getElementById('play-again-button');
+    
+    // --- Initial Setup ---
+    playerCountSelect.addEventListener('change', () => {
+        const count = parseInt(playerCountSelect.value);
+        for (let i = 1; i <= 4; i++) {
+            const input = document.getElementById(`p${i}-name`);
+            if (i <= count) {
+                input.style.display = 'block';
+            } else {
+                input.style.display = 'none';
             }
+        }
+    });
 
-            initializeEventListeners() {
-                document.getElementById('sendRequest').addEventListener('click', () => this.sendRequest());
-                document.getElementById('copyResponse').addEventListener('click', () => this.copyResponse());
-                
-                // Enter key to send
-                document.getElementById('messageInput').addEventListener('keydown', (e) => {
-                    if (e.ctrlKey && e.key === 'Enter') {
-                        this.sendRequest();
+    function setupGame() {
+        gameMode = document.querySelector('input[name="game-mode"]:checked').value;
+        minesEnabled = enableMinesCheckbox.checked;
+        const playerCount = parseInt(playerCountSelect.value);
+        
+        const defaultPlayers = [
+            { id: 1, name: 'الفريق الأزرق', score: 0, colorClass: 'cell-p1', borderClass: 'border-blue-500' },
+            { id: 2, name: 'الفريق الأحمر', score: 0, colorClass: 'cell-p2', borderClass: 'border-red-500' },
+            { id: 3, name: 'الفريق الأخضر', score: 0, colorClass: 'cell-p3', borderClass: 'border-green-500' },
+            { id: 4, name: 'الفريق الرابع', score: 0, colorClass: 'cell-p4', borderClass: 'border-yellow-500' },
+        ];
+        
+        players = defaultPlayers.slice(0, playerCount);
+        players.forEach((player, index) => {
+            const inputName = document.getElementById(`p${index + 1}-name`).value;
+            if (inputName) {
+                player.name = inputName;
+            }
+        });
+        
+        setupModal.classList.add('hidden');
+        gameContainer.classList.remove('hidden');
+        gameContainer.classList.add('flex');
+        initializeGame();
+    }
+
+    function initializeGame() {
+        boardState = Array(BOARD_SIZE).fill(null).map(() => Array(BOARD_SIZE).fill(null).map(() => ({ owner: null, isMine: false })));
+        if (minesEnabled) {
+            placeMines();
+        }
+        
+        moveHistory = [];
+        undoButton.disabled = true;
+        currentPlayerIndex = 0;
+        gameActive = true;
+        isPaused = false;
+        pauseButton.textContent = 'إيقاف مؤقت';
+        pauseOverlay.classList.add('hidden');
+        
+        gameOverModal.classList.add('hidden');
+        renderBoard();
+        renderPlayerCards();
+        updateScores();
+
+        if (gameMode === 'free') {
+            timerContainer.classList.add('hidden');
+            pauseButton.disabled = true;
+            manuallySetTurn(0);
+        } else {
+            timerContainer.classList.remove('hidden');
+            pauseButton.disabled = false;
+            startTurn();
+        }
+    }
+
+    function placeMines() {
+        let minesPlaced = 0;
+        while (minesPlaced < MINE_COUNT) {
+            const r = Math.floor(Math.random() * BOARD_SIZE);
+            const c = Math.floor(Math.random() * BOARD_SIZE);
+            if (!boardState[r][c].isMine) {
+                boardState[r][c].isMine = true;
+                minesPlaced++;
+            }
+        }
+    }
+
+    function renderBoard() {
+        boardWrapper.innerHTML = '';
+        boardWrapper.style.gridTemplateColumns = `repeat(${GRID_SIZE}, 1fr)`;
+        const arabicAlphabet = ['أ', 'ب', 'ت', 'ث', 'ج', 'ح', 'خ', 'د', 'ذ'];
+
+        for (let row = 0; row < GRID_SIZE; row++) {
+            for (let col = 0; col < GRID_SIZE; col++) {
+                const cell = document.createElement('div');
+                cell.className = 'w-full aspect-square rounded-md flex items-center justify-center text-xl';
+
+                if (row === 0 || col === 0) {
+                    cell.classList.add('label-cell');
+                    if (row === 0 && col > 0) cell.textContent = col;
+                    if (col === 0 && row > 0) cell.textContent = arabicAlphabet[row - 1];
+                } else {
+                    const boardRow = row - 1;
+                    const boardCol = col - 1;
+                    const cellData = boardState[boardRow][boardCol];
+                    
+                    cell.classList.add('cell', 'cursor-pointer', 'relative');
+                    cell.dataset.row = boardRow;
+                    cell.dataset.col = boardCol;
+                    
+                    const coordinateSpan = document.createElement('span');
+                    coordinateSpan.className = 'coordinate font-bold text-white';
+                    coordinateSpan.textContent = `${arabicAlphabet[boardRow]}${boardCol + 1}`;
+                    cell.appendChild(coordinateSpan);
+
+                    if (cellData.owner) {
+                        cell.classList.add(players.find(p => p.id === cellData.owner).colorClass);
+                    } else {
+                        cell.classList.add('bg-gray-700', 'hover:bg-gray-600');
                     }
-                });
+                    cell.addEventListener('click', handleCellClick);
+                }
+                boardWrapper.appendChild(cell);
             }
+        }
+    }
+    
+    function renderPlayerCards() {
+        playersScoresContainer.innerHTML = '';
+        players.forEach((player, index) => {
+            const card = document.createElement('div');
+            card.id = `player-card-${player.id}`;
+            card.className = `player-card p-4 rounded-lg flex justify-between items-center transition-all duration-300 border-2 bg-gray-900`;
+            card.classList.add(player.borderClass);
 
-            async sendRequest() {
-                const apiKey = document.getElementById('apiKey').value.trim();
-                const model = document.getElementById('modelSelect').value;
-                const requestType = document.querySelector('input[name="requestType"]:checked').value;
-                const message = document.getElementById('messageInput').value.trim();
-                const temperature = parseFloat(document.getElementById('temperature').value);
-                const maxTokens = parseInt(document.getElementById('maxTokens').value);
-
-                if (!apiKey) {
-                    this.showError('يرجى إدخال مفتاح API');
-                    return;
-                }
-
-                if (!message) {
-                    this.showError('يرجى إدخال رسالة');
-                    return;
-                }
-
-                this.showLoading();
-                const startTime = Date.now();
-
-                try {
-                    // Call the real Gemini API
-                    const response = await this.callGeminiAPI(model, message, temperature, maxTokens, requestType, apiKey);
-                    const endTime = Date.now();
-                    const responseTime = endTime - startTime;
-
-                    this.showResponse(response, 200, responseTime);
-                    this.addToHistory(model, message, response, 200, responseTime);
-
-                } catch (error) {
-                    const endTime = Date.now();
-                    const responseTime = endTime - startTime;
-                    const statusCode = error.statusCode || 500;
-                    this.showError(error.message, statusCode, responseTime);
-                    this.addToHistory(model, message, error.message, statusCode, responseTime);
-                }
+            card.innerHTML = `
+                <span class="font-bold text-lg">${player.name}</span>
+                <span id="player-${player.id}-score" class="text-2xl font-black">${player.score}</span>
+            `;
+            
+            if (gameMode === 'free') {
+                card.classList.add('cursor-pointer');
+                card.addEventListener('click', () => manuallySetTurn(index));
             }
+            playersScoresContainer.appendChild(card);
+        });
+    }
 
-            async callGeminiAPI(model, message, temperature, maxTokens, requestType, apiKey) {
-                const baseUrl = 'https://generativelanguage.googleapis.com/v1beta/models';
-                const endpoint = requestType === 'streamGenerateContent' ? 'streamGenerateContent' : 'generateContent';
-                const url = `${baseUrl}/${model}:${endpoint}?key=${apiKey}`;
+    function handleCellClick(event) {
+        if (!gameActive || isPaused) return;
+        const target = event.currentTarget;
+        const row = parseInt(target.dataset.row);
+        const col = parseInt(target.dataset.col);
+        const cellData = boardState[row][col];
+        const currentPlayer = players[currentPlayerIndex];
+        
+        if (cellData.owner === currentPlayer.id) {
+            return;
+        }
 
-                const requestBody = {
-                    contents: [{
-                        parts: [{
-                            text: message
-                        }]
-                    }],
-                    generationConfig: {
-                        temperature: temperature,
-                        maxOutputTokens: maxTokens,
-                        topP: 0.8,
-                        topK: 10
-                    },
-                    safetySettings: [
-                        {
-                            category: "HARM_CATEGORY_HARASSMENT",
-                            threshold: "BLOCK_MEDIUM_AND_ABOVE"
-                        },
-                        {
-                            category: "HARM_CATEGORY_HATE_SPEECH",
-                            threshold: "BLOCK_MEDIUM_AND_ABOVE"
-                        },
-                        {
-                            category: "HARM_CATEGORY_SEXUALLY_EXPLICIT",
-                            threshold: "BLOCK_MEDIUM_AND_ABOVE"
-                        },
-                        {
-                            category: "HARM_CATEGORY_DANGEROUS_CONTENT",
-                            threshold: "BLOCK_MEDIUM_AND_ABOVE"
-                        }
-                    ]
-                };
+        moveHistory.push({
+            board: JSON.parse(JSON.stringify(boardState)),
+            players: JSON.parse(JSON.stringify(players))
+        });
+        undoButton.disabled = false;
 
-                const response = await fetch(url, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(requestBody)
-                });
+        if (minesEnabled && cellData.isMine) {
+            handleMineExplosion(row, col, target);
+            return;
+        }
 
-                if (!response.ok) {
-                    const errorData = await response.json().catch(() => ({}));
-                    const error = new Error(errorData.error?.message || `HTTP ${response.status}: ${response.statusText}`);
-                    error.statusCode = response.status;
-                    throw error;
-                }
+        captureCell(row, col, currentPlayer);
+    }
+    
+    function handleMineExplosion(row, col, cellElement) {
+        const currentPlayer = players[currentPlayerIndex];
+        boardState[row][col].isMine = false;
+        
+        boardWrapper.classList.add('board-shake');
+        const explosionDiv = document.createElement('div');
+        explosionDiv.className = 'explosion-effect';
+        cellElement.appendChild(explosionDiv);
 
-                const data = await response.json();
-                return data;
+        setTimeout(() => {
+            explosionDiv.remove();
+            boardWrapper.classList.remove('board-shake');
+        }, 600);
+        
+        currentPlayer.score -= MINE_PENALTY;
+
+        const directions = [[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]];
+        [...directions, [0,0]].forEach(([dr, dc]) => {
+            const newRow = row + dr;
+            const newCol = col + dc;
+            if (isValid(newRow, newCol)) {
+                boardState[newRow][newCol].owner = null;
             }
+        });
 
-            showLoading() {
-                document.getElementById('responseContent').classList.add('hidden');
-                document.getElementById('loadingState').classList.remove('hidden');
-                document.getElementById('statusSection').classList.add('hidden');
-                document.getElementById('copyResponse').classList.add('hidden');
+        setTimeout(() => {
+            updateScores();
+            if (gameMode === 'competitive') nextTurn();
+        }, 250);
+    }
+    
+    function captureCell(row, col, player) {
+        boardState[row][col].owner = player.id;
+        
+        const directions = [[-1, 0], [1, 0], [0, -1], [0, 1]];
+        directions.forEach(([dr, dc]) => {
+            const newRow = row + dr;
+            const newCol = col + dc;
+            if (isValid(newRow, newCol) && boardState[newRow][newCol].owner !== player.id) {
+                boardState[newRow][newCol].owner = player.id;
             }
+        });
+        
+        updateScores();
+        
+        if (checkWinCondition()) {
+            endGame();
+        } else if (gameMode === 'competitive') {
+            nextTurn();
+        }
+    }
 
-            showResponse(response, statusCode, responseTime) {
-                document.getElementById('loadingState').classList.add('hidden');
-                document.getElementById('responseContent').classList.remove('hidden');
-                document.getElementById('statusSection').classList.remove('hidden');
-                document.getElementById('copyResponse').classList.remove('hidden');
+    function handleUndo() {
+        if (moveHistory.length === 0 || isPaused) return;
 
-                // Update result indicator
-                this.updateResultIndicator(statusCode === 200, statusCode, responseTime);
+        const lastState = moveHistory.pop();
+        boardState = lastState.board;
+        players = lastState.players;
 
-                // Update status
-                const statusElement = document.getElementById('statusCode');
-                statusElement.textContent = statusCode;
-                statusElement.className = `px-2 py-1 rounded text-xs font-medium ${
-                    statusCode === 200 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                }`;
-
-                document.getElementById('responseTime').textContent = `${responseTime}ms`;
-
-                // Show response
-                const responseContent = document.getElementById('responseContent');
-                if (response.candidates && response.candidates[0]) {
-                    const text = response.candidates[0].content.parts[0].text;
-                    responseContent.innerHTML = `
-                        <div class="mb-4">
-                            <h3 class="font-semibold text-gray-700 mb-2">النص المولد:</h3>
-                            <div class="bg-gray-50 p-4 rounded-lg border-r-4 border-blue-500">
-                                ${text.replace(/\n/g, '<br>')}
-                            </div>
-                        </div>
-                        <div>
-                            <h3 class="font-semibold text-gray-700 mb-2">الاستجابة الكاملة (JSON):</h3>
-                            <div class="code-block text-xs overflow-x-auto">
-${JSON.stringify(response, null, 2)}
-                            </div>
-                        </div>
-                    `;
-                } else {
-                    responseContent.innerHTML = `
-                        <div class="code-block text-xs overflow-x-auto">
-${JSON.stringify(response, null, 2)}
-                        </div>
-                    `;
-                }
-            }
-
-            showError(message, statusCode = 500, responseTime = 0) {
-                document.getElementById('loadingState').classList.add('hidden');
-                document.getElementById('responseContent').classList.remove('hidden');
-                document.getElementById('statusSection').classList.remove('hidden');
-
-                // Update result indicator
-                this.updateResultIndicator(false, statusCode, responseTime);
-
-                // Update status
-                const statusElement = document.getElementById('statusCode');
-                statusElement.textContent = statusCode;
-                statusElement.className = 'px-2 py-1 rounded text-xs font-medium bg-red-100 text-red-800';
-
-                if (responseTime > 0) {
-                    document.getElementById('responseTime').textContent = `${responseTime}ms`;
-                }
-
-                // Show error
-                document.getElementById('responseContent').innerHTML = `
-                    <div class="text-center text-red-600">
-                        <div class="text-4xl mb-2">❌</div>
-                        <p class="font-semibold">خطأ في الطلب</p>
-                        <p class="text-sm mt-2">${message}</p>
-                    </div>
-                `;
-            }
-
-            updateResultIndicator(isSuccess, statusCode, responseTime) {
-                const indicator = document.getElementById('resultIndicator');
-                const icon = document.getElementById('resultIcon');
-                const text = document.getElementById('resultText');
-                const subtext = document.getElementById('resultSubtext');
-
-                if (isSuccess) {
-                    // Success state
-                    indicator.className = 'mb-4 p-4 rounded-lg border-2 text-center bg-green-50 border-green-200';
-                    icon.textContent = '✅';
-                    text.textContent = 'نجح الطلب';
-                    text.className = 'font-bold text-lg text-green-800';
-                    subtext.textContent = `تم الحصول على الاستجابة بنجاح في ${responseTime}ms`;
-                    subtext.className = 'text-sm mt-1 text-green-600';
-                } else {
-                    // Failure state
-                    indicator.className = 'mb-4 p-4 rounded-lg border-2 text-center bg-red-50 border-red-200';
-                    icon.textContent = '❌';
-                    text.textContent = 'فشل الطلب';
-                    text.className = 'font-bold text-lg text-red-800';
-                    
-                    let errorMessage = 'حدث خطأ أثناء معالجة الطلب';
-                    switch(statusCode) {
-                        case 400:
-                            errorMessage = 'خطأ في بيانات الطلب المرسل';
-                            break;
-                        case 401:
-                            errorMessage = 'مفتاح API غير صحيح أو منتهي الصلاحية';
-                            break;
-                        case 403:
-                            errorMessage = 'غير مصرح لك بالوصول لهذا المورد';
-                            break;
-                        case 429:
-                            errorMessage = 'تم تجاوز الحد المسموح من الطلبات';
-                            break;
-                        case 500:
-                            errorMessage = 'خطأ في الخادم الداخلي';
-                            break;
-                    }
-                    
-                    subtext.textContent = errorMessage;
-                    subtext.className = 'text-sm mt-1 text-red-600';
-                }
-            }
-
-            copyResponse() {
-                const responseElement = document.getElementById('responseContent');
-                const text = responseElement.textContent || responseElement.innerText;
-                
-                if (navigator.clipboard && navigator.clipboard.writeText) {
-                    navigator.clipboard.writeText(text).then(() => {
-                        const button = document.getElementById('copyResponse');
-                        const originalText = button.textContent;
-                        button.textContent = '✅ تم النسخ!';
-                        setTimeout(() => {
-                            button.textContent = originalText;
-                        }, 2000);
-                    });
-                } else {
-                    // Fallback for older browsers
-                    const textArea = document.createElement('textarea');
-                    textArea.value = text;
-                    document.body.appendChild(textArea);
-                    textArea.select();
-                    document.execCommand('copy');
-                    document.body.removeChild(textArea);
-                    
-                    const button = document.getElementById('copyResponse');
-                    const originalText = button.textContent;
-                    button.textContent = '✅ تم النسخ!';
-                    setTimeout(() => {
-                        button.textContent = originalText;
-                    }, 2000);
-                }
-            }
-
-            addToHistory(model, message, response, statusCode, responseTime) {
-                const historyItem = {
-                    timestamp: new Date().toLocaleString('ar-SA'),
-                    model,
-                    message: message.substring(0, 50) + (message.length > 50 ? '...' : ''),
-                    statusCode,
-                    responseTime
-                };
-
-                this.history.unshift(historyItem);
-                if (this.history.length > 10) {
-                    this.history = this.history.slice(0, 10);
-                }
-
-                this.updateHistoryDisplay();
-            }
-
-            updateHistoryDisplay() {
-                const historyContainer = document.getElementById('requestHistory');
-                
-                if (this.history.length === 0) {
-                    historyContainer.innerHTML = '<p class="text-gray-500 text-center py-8">لا توجد طلبات سابقة</p>';
-                    return;
-                }
-
-                historyContainer.innerHTML = this.history.map(item => `
-                    <div class="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors">
-                        <div class="flex justify-between items-start mb-2">
-                            <span class="text-sm font-medium text-gray-700">${item.model}</span>
-                            <span class="text-xs text-gray-500">${item.timestamp}</span>
-                        </div>
-                        <p class="text-sm text-gray-600 mb-2">${item.message}</p>
-                        <div class="flex gap-4 text-xs">
-                            <span class="flex items-center gap-1">
-                                <span class="w-2 h-2 rounded-full ${item.statusCode === 200 ? 'bg-green-500' : 'bg-red-500'}"></span>
-                                ${item.statusCode}
-                            </span>
-                            <span class="text-gray-500">${item.responseTime}ms</span>
-                        </div>
-                    </div>
-                `).join('');
+        if (gameMode === 'competitive') {
+            currentPlayerIndex = (currentPlayerIndex - 1 + players.length) % players.length;
+            startTurn();
+        } else {
+            const activePlayer = players[currentPlayerIndex];
+            if (activePlayer) {
+                currentPlayerNameEl.textContent = activePlayer.name;
             }
         }
 
-        // Initialize the app
-        document.addEventListener('DOMContentLoaded', () => {
-            new GeminiAPITester();
+        renderPlayerCards();
+        renderBoard();
+
+        if (moveHistory.length === 0) {
+            undoButton.disabled = true;
+        }
+    }
+
+    function isValid(row, col) {
+        return row >= 0 && row < BOARD_SIZE && col >= 0 && col < BOARD_SIZE;
+    }
+
+    function updateScores() {
+        const scoreCount = {};
+        players.forEach(p => scoreCount[p.id] = 0);
+        
+        for (let r = 0; r < BOARD_SIZE; r++) {
+            for (let c = 0; c < BOARD_SIZE; c++) {
+                const owner = boardState[r][c].owner;
+                if (owner && scoreCount.hasOwnProperty(owner)) {
+                    scoreCount[owner]++;
+                }
+            }
+        }
+        
+        let totalOwned = 0;
+        players.forEach(p => {
+            const newScore = scoreCount[p.id];
+            p.score = p.score < 0 && newScore === 0 ? p.score : newScore;
+            
+            const scoreEl = document.getElementById(`player-${p.id}-score`);
+            if(scoreEl) scoreEl.textContent = p.score;
+            totalOwned += p.score;
         });
-    </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'96e35a96e4be5cd0',t:'MTc1NTAzNzE2Mi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+        
+        renderBoard();
+        return totalOwned;
+    }
+
+    function startTurn() {
+        if (gameMode !== 'competitive' || isPaused || !gameActive) return;
+        clearInterval(turnTimer);
+        const currentPlayer = players[currentPlayerIndex];
+        currentPlayerNameEl.textContent = currentPlayer.name;
+        
+        document.querySelectorAll('.player-card').forEach(c => c.classList.remove('active'));
+        const activeCard = document.getElementById(`player-card-${currentPlayer.id}`);
+        if (activeCard) activeCard.classList.add('active');
+
+        timeLeftInTurn = timeLeftInTurn || TURN_DURATION;
+        const timerBarEl = document.getElementById('timer-bar');
+        timerBarEl.style.width = `${(timeLeftInTurn / TURN_DURATION) * 100}%`;
+        timerBarEl.style.transitionDuration = '1s';
+        
+        turnTimer = setInterval(() => {
+            timeLeftInTurn--;
+            const width = (timeLeftInTurn / TURN_DURATION) * 100;
+            timerBarEl.style.width = `${width}%`;
+            if (timeLeftInTurn <= 0) {
+                nextTurn();
+            }
+        }, 1000);
+    }
+    
+    function nextTurn() {
+        if (gameMode !== 'competitive' || !gameActive) return;
+        clearInterval(turnTimer);
+        const timerBarEl = document.getElementById('timer-bar');
+        if(timerBarEl) timerBarEl.style.transitionDuration = '0s';
+        timeLeftInTurn = null; 
+        currentPlayerIndex = (currentPlayerIndex + 1) % players.length;
+        if(gameActive) startTurn();
+    }
+
+    function manuallySetTurn(index) {
+        if (!gameActive || isPaused || gameMode !== 'free') return;
+        currentPlayerIndex = index;
+        const currentPlayer = players[currentPlayerIndex];
+        currentPlayerNameEl.textContent = currentPlayer.name;
+        
+        document.querySelectorAll('.player-card').forEach(c => c.classList.remove('active'));
+        const activeCard = document.getElementById(`player-card-${currentPlayer.id}`);
+        if(activeCard) activeCard.classList.add('active');
+    }
+        
+    function checkWinCondition() {
+        let totalOwnedCells = 0;
+        for (let r = 0; r < BOARD_SIZE; r++) {
+            for (let c = 0; c < BOARD_SIZE; c++) {
+                if (boardState[r][c].owner) {
+                    totalOwnedCells++;
+                }
+            }
+        }
+        return totalOwnedCells >= BOARD_SIZE * BOARD_SIZE;
+    }
+
+    function endGame() {
+        gameActive = false;
+        clearInterval(turnTimer);
+
+        updateScores();
+        const sortedPlayers = [...players].sort((a, b) => b.score - a.score);
+        
+        gameOverTitle.textContent = sortedPlayers.length > 0 ? `🎉 ${sortedPlayers[0].name} هو الفائز! 🎉` : 'انتهت اللعبة!';
+        gameOverRanking.innerHTML = sortedPlayers.map((p, index) => `
+            <p class="font-bold">${index+1}. ${p.name}: <span class="text-cyan-400">${p.score}</span> مربع</p>
+        `).join('');
+
+        gameOverModal.classList.remove('hidden');
+    }
+
+    function togglePauseGame() {
+        if (gameMode !== 'competitive') return;
+        isPaused = !isPaused;
+        if(isPaused) {
+            clearInterval(turnTimer);
+            pauseButton.textContent = 'استئناف';
+            pauseOverlay.classList.remove('hidden');
+        } else {
+            startTurn();
+            pauseButton.textContent = 'إيقاف مؤقت';
+            pauseOverlay.classList.add('hidden');
+        }
+    }
+    
+    startGameButton.addEventListener('click', setupGame);
+    pauseButton.addEventListener('click', togglePauseGame);
+    undoButton.addEventListener('click', handleUndo);
+    resetButton.addEventListener('click', () => {
+        clearInterval(turnTimer);
+        gameContainer.classList.add('hidden');
+        gameContainer.classList.remove('flex');
+        setupModal.classList.remove('hidden');
+    });
+    playAgainButton.addEventListener('click', () => {
+         gameOverModal.classList.add('hidden');
+         gameContainer.classList.add('hidden');
+         gameContainer.classList.remove('flex');
+         setupModal.classList.remove('hidden');
+    });
+
+});
+</script>
+
+</body>
 </html>
+
